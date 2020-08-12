@@ -23,7 +23,7 @@ namespace AudicaModding
                     if (!AudicaMod.buttonsBeingCreated && state == MenuState.State.SongPage) AudicaMod.CreateSongPanelButton();
                     return;
                 }
-                if (state == MenuState.State.SongPage) AudicaMod.SetRandomSongButtonActive(true);
+                if (state == MenuState.State.SongPage && !AudicaMod.timerSet) AudicaMod.StartTimer();
                 else if(state == MenuState.State.LaunchPage || state == MenuState.State.MainPage) AudicaMod.SetRandomSongButtonActive(false);
             }
 

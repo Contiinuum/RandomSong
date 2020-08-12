@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections;
 using TMPro;
 using UnityEngine.Events;
+using System.Timers;
 
 namespace AudicaModding
 {
@@ -23,6 +24,20 @@ namespace AudicaModding
         private static Vector3 randomButtonRot = new Vector3(0f, 0f, 0f);
         private static Vector3 randomButtonScale = new Vector3(2f, 2f, 2f);
 
+        private static int randomSongBagSize = 10;
+        private static int mainSongCount = 33;
+        private static bool availableSongListsSetup = false;
+        private static List<int> availableMainSongs = new List<int>();
+        private static List<int> availableExtrasSongs = new List<int>();
+        private static List<int> lastPickedSongs = new List<int>();
+        private static List<int> availableSongs = new List<int>();
+
+        private static SongSelect songSelect = null;
+        private static bool songSelectSet = false;
+
+        private static Timer timer = null;
+        public static bool timerSet = false;
+
         public static class BuildInfo
         {
             public const string Name = "RandomSong";  // Name of the Mod.  (MUST BE SET)
@@ -31,6 +46,39 @@ namespace AudicaModding
             public const string Version = "0.1.0"; // Version of the Mod.  (MUST BE SET)
             public const string DownloadLink = null; // Download Link for the Mod.  (Set as null if none)
         }
+
+        private void CreateConfig()
+        {
+            ModPrefs.RegisterPrefInt("RandomSong", "RandomSongBagSize", randomSongBagSize);
+
+        }
+
+        private void LoadConfig()
+        {
+            randomSongBagSize = ModPrefs.GetInt("RandomSong", "RandomSongBagSize");
+            if (randomSongBagSize > mainSongCount) randomSongBagSize = mainSongCount;
+
+        }
+
+        public static void SaveConfig()
+        {
+            ModPrefs.SetInt("RandomSong", "RandomSongBagSize", randomSongBagSize);
+        }
+
+        public override void OnLevelWasLoaded(int level)
+        {
+
+            if (!ModPrefs.HasKey("RandomSong", "RandomSongBagSize"))
+            {
+                CreateConfig();
+            }
+            else
+            {
+                LoadConfig();
+
+            }
+        }
+
 
         public override void OnApplicationStart()
         {
@@ -42,15 +90,17 @@ namespace AudicaModding
         {
             buttonsBeingCreated = true;
             filterMainButton = GameObject.FindObjectOfType<MainMenuPanel>().buttons[1];
-            
-                     
+                                
             randomSongButton = CreateButton(filterMainButton, "Random Song", OnRandomSongShot, randomButtonPos, randomButtonRot, randomButtonScale);
             panelButtonsCreated = true;
+            SetRandomSongButtonActive(false);
+            StartTimer();
         }
 
         public static void SetRandomSongButtonActive(bool active)
         {
             randomSongButton.SetActive(active);
+            if (!active) timerSet = false;
         }
 
         private static void OnRandomSongShot()
@@ -78,12 +128,80 @@ namespace AudicaModding
             return buttonObject.gameObject;
         }
 
+        public static void StartTimer()
+        {
+            timerSet = true;
+            timer = new Timer(3000);            
+            timer.Elapsed += OnTimerFinished;
+            timer.Start();
+        }
+
+        private static void OnTimerFinished(object sender, EventArgs e)
+        {
+            timer.Stop();
+            timer.Dispose();
+            SetRandomSongButtonActive(true);
+            
+        }
+
         private static void GetRandomSong()
         {
-            SongSelect songSelect = GameObject.FindObjectOfType<SongSelect>();
-            int maxLength = songSelect.mSongButtons.Count -1;
+            if (!songSelectSet)
+            {
+                songSelect = GameObject.FindObjectOfType<SongSelect>();
+                songSelectSet = true;
+            }
+            int maxLength = songSelect.mSongButtons.Count - 1;
+            if (!availableSongListsSetup)
+            {
+                availableSongListsSetup = true;
+
+                for(int i = 0; i < mainSongCount; i++)
+                {
+                    availableMainSongs.Add(i);
+                }
+
+                for(int i = mainSongCount; i < maxLength; i++)
+                {
+                    availableExtrasSongs.Add(i);
+                }
+
+                for(int i = 0; i < maxLength; i++)
+                {
+                    availableSongs.Add(i);
+                }
+            }
+            SongSelect.Filter filter = songSelect.GetListFilter();
+
             var rand = new System.Random();
-            songSelect.mSongButtons[rand.Next(maxLength)].OnSelect();
+            int index;
+            if(filter == SongSelect.Filter.All)
+            {
+                index = availableSongs[rand.Next(0, availableSongs.Count - 1)];
+            }
+            else if(filter == SongSelect.Filter.Main)
+            {
+                index = availableMainSongs[rand.Next(0, availableMainSongs.Count - 1)];
+                if(availableMainSongs.Count > 0) availableMainSongs.Remove(index);
+            }
+            else
+            {
+                index = availableExtrasSongs[rand.Next(0, availableExtrasSongs.Count - 1)];
+                if (availableExtrasSongs.Count > 0) availableExtrasSongs.Remove(index);
+            }
+            songSelect.mSongButtons[index].OnSelect();
+            lastPickedSongs.Add(index);
+            if (availableSongs.Count > 0) availableSongs.Remove(index);
+            
+           
+            if (lastPickedSongs.Count > randomSongBagSize)
+            {
+                int oldestIndex = lastPickedSongs[0];
+                lastPickedSongs.Remove(oldestIndex);
+                availableSongs.Add(oldestIndex);
+                if (oldestIndex < 33) availableMainSongs.Add(index);
+                else availableExtrasSongs.Add(index);
+            }
         }
     }
 }
