@@ -8,10 +8,6 @@ namespace AudicaModding
 {
     internal static class Hooks
     {
-        public static void ApplyHooks(HarmonyInstance instance)
-        {
-            instance.PatchAll(Assembly.GetExecutingAssembly());
-        }
 
         [HarmonyPatch(typeof(MenuState), "SetState", new Type[] { typeof(MenuState.State) })]
         private static class PatchSetMenuState

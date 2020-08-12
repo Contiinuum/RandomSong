@@ -82,8 +82,7 @@ namespace AudicaModding
 
         public override void OnApplicationStart()
         {
-            var i = HarmonyInstance.Create("RandomSong");
-            Hooks.ApplyHooks(i);
+            HarmonyInstance.Create("RandomSong");
         }
 
         public static void CreateSongPanelButton()
@@ -100,7 +99,13 @@ namespace AudicaModding
         public static void SetRandomSongButtonActive(bool active)
         {
             randomSongButton.SetActive(active);
-            if (!active) timerSet = false;
+            if (!active && timerSet)
+            {
+                timerSet = false;
+                timer.Stop();
+                timer.Dispose();
+            }
+               
         }
 
         private static void OnRandomSongShot()
