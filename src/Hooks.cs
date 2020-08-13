@@ -19,8 +19,8 @@ namespace AudicaModding
                     if (!AudicaMod.buttonsBeingCreated && state == MenuState.State.SongPage) AudicaMod.CreateSongPanelButton();
                     return;
                 }
-                if (state == MenuState.State.SongPage && !AudicaMod.timerSet) AudicaMod.StartTimer();
-                else if(state == MenuState.State.LaunchPage || state == MenuState.State.MainPage) AudicaMod.SetRandomSongButtonActive(false);
+                if (state == MenuState.State.SongPage) MelonCoroutines.Start(AudicaMod.SetRandomSongButtonActive(true));
+                else if(state == MenuState.State.LaunchPage || state == MenuState.State.MainPage) MelonCoroutines.Start(AudicaMod.SetRandomSongButtonActive(false));
             }
 
         }
