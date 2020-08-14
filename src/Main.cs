@@ -33,10 +33,8 @@ namespace AudicaModding
         private static List<int> availableSongs = new List<int>();
 
         private static SongSelect songSelect = null;
-        private static bool songSelectSet = false;
 
-        private static Timer timer = null;
-        public static bool timerSet = false;
+        private static Il2CppSystem.Collections.Generic.List<SongSelectItem> songs = new Il2CppSystem.Collections.Generic.List<SongSelectItem>();
 
         public static class BuildInfo
         {
@@ -92,20 +90,14 @@ namespace AudicaModding
                                 
             randomSongButton = CreateButton(filterMainButton, "Random Song", OnRandomSongShot, randomButtonPos, randomButtonRot, randomButtonScale);
             panelButtonsCreated = true;
-            SetRandomSongButtonActive(false);
-            StartTimer();
+            SetRandomSongButtonActive(true);
         }
 
-        public static void SetRandomSongButtonActive(bool active)
+        public static IEnumerator SetRandomSongButtonActive(bool active)
         {
+            if (active) yield return new WaitForSeconds(.65f);
+            else yield return null;
             randomSongButton.SetActive(active);
-            if (!active && timerSet)
-            {
-                timerSet = false;
-                timer.Stop();
-                timer.Dispose();
-            }
-               
         }
 
         private static void OnRandomSongShot()
@@ -133,30 +125,11 @@ namespace AudicaModding
             return buttonObject.gameObject;
         }
 
-        public static void StartTimer()
-        {
-            timerSet = true;
-            timer = new Timer(3000);            
-            timer.Elapsed += OnTimerFinished;
-            timer.Start();
-        }
-
-        private static void OnTimerFinished(object sender, EventArgs e)
-        {
-            timer.Stop();
-            timer.Dispose();
-            SetRandomSongButtonActive(true);
-            
-        }
-
         private static void GetRandomSong()
         {
-            if (!songSelectSet)
-            {
-                songSelect = GameObject.FindObjectOfType<SongSelect>();
-                songSelectSet = true;
-            }
-            int maxLength = songSelect.mSongButtons.Count - 1;
+            songSelect = GameObject.FindObjectOfType<SongSelect>();
+            songs = songSelect.songSelectItems.mItems;
+            int maxLength = songs.Count - 1;
             if (!availableSongListsSetup)
             {
                 availableSongListsSetup = true;
@@ -194,7 +167,7 @@ namespace AudicaModding
                 index = availableExtrasSongs[rand.Next(0, availableExtrasSongs.Count - 1)];
                 if (availableExtrasSongs.Count > 0) availableExtrasSongs.Remove(index);
             }
-            songSelect.mSongButtons[index].OnSelect();
+            songs[index].OnSelect();
             lastPickedSongs.Add(index);
             if (availableSongs.Count > 0) availableSongs.Remove(index);
             
